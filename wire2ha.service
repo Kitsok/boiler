@@ -1,0 +1,12 @@
+[Unit]
+Description=1-wire to Home Assistant pusher
+Requires=owserver.service
+Requires=hass.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/cycler.sh wire2ha.py 60
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

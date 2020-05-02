@@ -1,0 +1,11 @@
+[Unit]
+Description=MAP Inverter gateway service
+Requires=hass.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/cycler.sh mapgw.py 60
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

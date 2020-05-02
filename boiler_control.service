@@ -1,0 +1,12 @@
+[Unit]
+Description=Boiler control service
+Requires=hass.service
+Requires=wire2ha.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/cycler.sh boiler_control.py 60
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
