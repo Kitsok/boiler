@@ -44,14 +44,14 @@ if debug: print("Setpoint:", setpoint)
 
 
 # Talk to OpenTherm gateway
-port = '/dev/ttyACM0'
+port = '/dev/otgw'
 try:
-    ser = open('/dev/ttyACM0')
+    ser = open(port)
     attrs = termios.tcgetattr(ser)
     attrs[2] = attrs[2] & ~termios.HUPCL
     termios.tcsetattr(ser, termios.TCSAFLUSH, attrs)
     ser.close()
-    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=2)
+    ser = serial.Serial(port, 115200, timeout=2)
 except Exception as ex:
     print("Error:", ex)
     sys.exit()

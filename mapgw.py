@@ -14,7 +14,6 @@ from secrets import token, host
 debug = False
 debug = True
 
-
 url_tmpl = host + "api/states/"
 
 headers = {
@@ -30,7 +29,7 @@ state_sensor = {
     "state": 'Unknown'
 }
 
-port = '/dev/ttyUSB0'
+port = '/dev/ttyMAP'
 try:
 	ser = open(port)
 	attrs = termios.tcgetattr(ser)
