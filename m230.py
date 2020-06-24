@@ -500,56 +500,8 @@ class M230:
          return sn
 
     ########################################################################
-    def getDataFromCounter(self):
-         try:
-             getConn=getConnect(self._netaddr,serialPort)
-             if(getConn == 1):
-                 #if(DEBUG == 1): print( 'Unit ' + str(self._netaddr) + ' turn On')
-                 rc = openChannel(self._netaddr, serialPort)
-                 if(rc == 1):
-                     #if(DEBUG == 1):  print( 'Opened chanel for ' + str(self._netaddr))
-                     #sn1 = getSN(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print ('Serial Number ' + sn1)
-                     #unitAddress = getUnitAddr(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print ('Unit address ' + str(unitAddress))
-                     #freq = getFreq(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print ('Freq ' + str(freq))
-                     #Aplus, Aminus, Rplus, Rminus = getEn0(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print( 'Summa A+ ' + str(Aplus) + ' A- ' + str(Aminus) + ' R+ ' + str(Rplus) + ' R- ' + str(Rminus))
-                     #Aplus, Aminus, Rplus, Rminus = getEn1(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print( 'Tar_1 A+ ' + str(Aplus) + ' A- ' + str(Aminus) + ' R+ ' + str(Rplus) + ' R- ' + str(Rminus))
-                     #Aplus, Aminus, Rplus, Rminus = getEn2(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print( 'Tar_2 A+ ' + str(Aplus) + ' A- ' + str(Aminus) + ' R+ ' + str(Rplus) + ' R- ' + str(Rminus))
-                     #Aplus, Aminus, Rplus, Rminus = getEn3(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print( 'Tar_3 A+ ' + str(Aplus) + ' A- ' + str(Aminus) + ' R+ ' + str(Rplus) + ' R- ' + str(Rminus))
-                     #Aplus, Aminus, Rplus, Rminus = getEn4(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print( 'Tar_4 A+ ' + str(Aplus) + ' A- ' + str(Aminus) + ' R+ ' + str(Rplus) + ' R- ' + str(Rminus))
-                     U1, U2, U3 = getU(self._netaddr, serialPort)
-                     if(DEBUG == 1): print( 'U1 ' + str(U1) + ' U2 ' + str(U2) + ' U3 ' + str(U3)              )
-                     I1, I2, I3 = getI(self._netaddr, serialPort)
-                     if(DEBUG == 1): print( 'I1 ' + str(I1) + ' I2 ' + str(I2) + ' I3 ' + str(I3)              )
-                     # P, P1, P2, P3 = getP(self._netaddr, serialPort)
-                     P1 = round(U1 * I1, 2)
-                     P2 = round(U2 * I2, 2)
-                     P3 = round(U3 * I3, 2)
-                     P = round(P1 + P2 + P3, 2)
-                     if(DEBUG == 1): print ('P ' + str(P) + ' P1 ' + str(P1) + ' P2 ' + str(P2) + ' P3 ' + str(P3) )
-                     #PS, PS1, PS2, PS3 = getPS(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print ('PS ' + str(PS) + ' PS1 ' + str(PS1) + ' PS2 ' + str(PS2) + ' PS3 ' + str(PS3) )
-                     #PQ, PQ1, PQ2, PQ3 = getPQ(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print ('PQ ' + str(PQ) + ' PQ1 ' + str(PQ1) + ' PQ2 ' + str(PQ2) + ' PQ3 ' + str(PQ3) )
-                     cosF, cosF1, cosF2, cosF3 = getCosF(self._netaddr, serialPort)
-                     if(DEBUG == 1): print( 'cosF ' + str(cosF) + ' cosF1 ' + str(cosF1) + ' cosF2 ' + str(cosF2) + ' cosF3 ' + str(cosF3) )
-                     #Angle1, Angle2, Angle3 = getAngle(self._netaddr, serialPort)
-                     #if(DEBUG == 1): print ('Ang 1 ' + str(Angle1) + ' Ang 2 ' + str(Angle2) + ' Ang 3 ' + str(Angle3) )
-
-         except Exception as e:
-            print('Error', e)
-            pass
 
 if __name__ == '__main__':
     # execute only if run as a script
     m230 = M230('/dev/moxa')
     print(json.dumps(m230.data))
-
-
