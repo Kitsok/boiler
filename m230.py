@@ -2,9 +2,36 @@ import serial
 import sys
 import os
 import time
+import inspect
 
 import binascii
 import json
+
+from requests import get
+from requests import post
+from secrets import token, host
+
+url_tmpl = host + "api/states/"
+headers = {
+    'Authorization': token,
+    'content-type': 'application/json'
+}
+
+sensor = {
+   'entity_id': 'sensor.inverter_state',
+   'state': 'Unknown'
+}
+
+mydict = dict()
+
+def mkflatdict(d, _pre='sensor.m230'):
+    pre = _pre
+    for k, v in d.items():
+        if isinstance(v, dict):
+            mkflatdict(v, pre + '_' + k)
+        else:
+            mydict['{}_{}'.format(pre,k)] =  v
+            # print("{}_{} : {}".format(pre, k, v))
 
 auchCRCHi = [
 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81,
@@ -85,33 +112,37 @@ class M230:
 
     def getData(self):
         self.data = dict()
-        self.data['Energy'] = dict()
-        self.data['PhaseA'] = dict()
-        self.data['PhaseB'] = dict()
-        self.data['PhaseC'] = dict()
+        self.data['error'] = None
 
-        if self._ser is None:
+        if self.fail:
             self.connect()
-        self.getConnect()
-        self.openChannel()
-        self.getSN()
-        self.getFreq()
-        self.getEn0()
-        self.getEn1()
-        self.getEn2()
 
-        self.getU()
-        self.getI()
-        self.getCosF()
-        self.getP()
+        self.getConnect()
+        if not self.fail:
+            self.data['Energy'] = dict()
+            self.data['PhaseA'] = dict()
+            self.data['PhaseB'] = dict()
+            self.data['PhaseC'] = dict()
+
+            self.openChannel()
+            self.getSN()
+            self.getFreq()
+            self.getEn0()
+            self.getEn1()
+            self.getEn2()
+
+            self.getU()
+            self.getI()
+            self.getCosF()
+            self.getP()
 
     def connect(self):
         try:
-            self._ser = serial.Serial(self._tty, 9600, timeout=2)
-            self._netaddr = 0
+            self._ser = serial.Serial(self._tty, 9600, timeout=0.5)
+            self.fail = False
             return True
-        except Exception as ex:
-            print('Failed to open {}'.format(self._tty), ex)
+        except Exception as e:
+            self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
             self.fail = True
             pass
         return False
@@ -128,7 +159,7 @@ class M230:
              if(rsp[0] == int(self._netaddr) ):
                  return True
          except Exception as e:
-             print ('openChannel', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
          return False
@@ -151,7 +182,7 @@ class M230:
              x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
              return True
          except Exception as e:
-             print ('getEn0- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
          return False
@@ -174,7 +205,7 @@ class M230:
              x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
              return True
          except Exception as e:
-             print ('getEn1- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
          return False
@@ -197,7 +228,7 @@ class M230:
              x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
              return True
          except Exception as e:
-             print ('getEn1- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
          return False
@@ -216,7 +247,7 @@ class M230:
              Rplus  =  int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])
              Rminus  = int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15])
          except Exception as e:
-             print ('getEn3- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
          return Aplus / 1000.0, (Aminus^0xFFFFFFFF) / 1000.0, Rplus / 1000.0, (Rminus^0xFFFFFFFF) / 1000.0
 
@@ -234,12 +265,13 @@ class M230:
              Rplus  =  int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])
              Rminus  = int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15])
          except Exception as e:
-             print ('getEn4- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
          return Aplus / 1000.0, (Aminus^0xFFFFFFFF) / 1000.0, Rplus / 1000.0, (Rminus^0xFFFFFFFF) / 1000.0
 
     #########################################################################     try to find unit
     def getConnect(self):
+         if self.fail: return False
          try:
              self._ser.reset_input_buffer()
              self._ser.flush()
@@ -251,7 +283,7 @@ class M230:
                  self.fail = False
                  return True
          except Exception as e:
-             print ('getConnect error', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
          return False
@@ -271,7 +303,7 @@ class M230:
              self.data['PhaseC']['U']  = (int(rsp[7]<<16) + int(rsp[9]<<8) + int(rsp[8])) / 100.0
              return True
          except Exception as e:
-             print ('getU- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
          return False
@@ -291,7 +323,7 @@ class M230:
              self.data['PhaseC']['I']  = (int(rsp[7]<<16) + int(rsp[9]<<8) + int(rsp[8])) / 1000.0
              return True
          except Exception as e:
-             print ('getI- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
          return False
@@ -306,7 +338,7 @@ class M230:
             self.data['Power_Total'] = round(self.data['PhaseA']['P'] + self.data['PhaseB']['P'] + self.data['PhaseC']['P'], 2)
             return True
         except Exception as e:
-            print('getP-', e)
+            self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
             self.fail = True
             pass
         return False
@@ -336,7 +368,7 @@ class M230:
              if( bt10[1] == '1'): P3 = P3        #   0x40
              if( bt10[0] == '1'): P3 = P3 * -1   #   0x80
          except Exception as e:
-             print ('getP- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
          return P / 10000.0, P1 / 10000.0, P2 / 10000.0, P3 / 10000.0
 
@@ -366,7 +398,7 @@ class M230:
              if( bt10[1] == '1'): P3 = P3        #   0x40
              if( bt10[0] == '1'): P3 = P3 * -1   #   0x80
          except Exception as e:
-             print ('getPS- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
          return P / 10000.0, P1 / 10000.0, P2 / 10000.0, P3 / 10000.0
 
@@ -396,7 +428,7 @@ class M230:
              if( bt10[1] == '1'): P3 = P3        #   0x40
              if( bt10[0] == '1'): P3 = P3 * -1   #   0x80
          except Exception as e:
-             print ('getPQ- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
          return P / 10000.0, P1 / 10000.0, P2 / 10000.0, P3 / 10000.0
 
@@ -434,7 +466,7 @@ class M230:
              return True
 
          except Exception as e:
-             print ('getCosF- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
          return False
@@ -450,9 +482,10 @@ class M230:
              A1  = int(rsp[1]<<16) + int(rsp[3]<<8) + int(rsp[2])
              A2  = int(rsp[4]<<16) + int(rsp[6]<<8) + int(rsp[5])
              A3  = int(rsp[7]<<16) + int(rsp[9]<<8) + int(rsp[8])
-             print("Angles", A1, A2, A3)
          except Exception as e:
-             print ('getAng- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
+             self.fail = True
+             pass
          return 0.01 * (A1^0xFFFFFF), 0.01 * (A2^0xFFFFFF), 0.01 * (A3^0xFFFFFF)
 
     #########################################################################                         freq
@@ -467,7 +500,7 @@ class M230:
              self.data['freq']  = (int(rsp[1]<<16) + int(rsp[3]<<8) + int(rsp[2])) / 100.0
              return True
          except Exception as e:
-             print ('getFreq- ', e)
+             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
          return False
@@ -488,8 +521,8 @@ class M230:
             self.data['SerialNumber'] += str(rsp[4]).zfill(2)
             return True
         except Exception as e:
+            self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
             self.fail = True
-            print ('getSN', e)
         return False
 
     ########################################################################                 network address
@@ -508,13 +541,16 @@ class M230:
     ########################################################################
 
 if __name__ == '__main__':
-    # execute only if run as a script
-    m230 = M230('/dev/moxa')
+    m230 = M230('/dev/moxa', 0)
     while True:
         m230.getData()
-        if m230.fail:
-            print('Data fetch failed')
-            time.sleep(1)
-            continue
+        mydict = dict()
         if debug: print(json.dumps(m230.data, indent=4, sort_keys=True))
-        time.sleep(0.5)
+        mkflatdict(m230.data, 'sensor.m230')
+        for k,v in mydict.items():
+            sensor['entity_id'] = k
+            sensor['state'] = v
+            rc = post(url_tmpl + k, headers=headers, json = sensor).json()
+            if debug: print(rc)
+
+        time.sleep(30)
