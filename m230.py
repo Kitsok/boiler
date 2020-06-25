@@ -1,6 +1,7 @@
 import serial
 import sys
 import os
+import time
 
 import binascii
 import json
@@ -45,6 +46,9 @@ auchCRCLo = [
 0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42, 0x43, 0x83, 0x41, 0x81, 0x80,
 0x40]
 
+debug = False
+debug = True
+
 def hexOut(rsp):
     print(''.join(format(x, '02x') for x in rsp))
 
@@ -73,20 +77,21 @@ def crc16Hi(data) :
 class M230:
 
     # Private objects
-    def __init__(self, tty = "/dev/ttyUSB0", netaddr = 0, debug = False):
+    def __init__(self, tty = "/dev/ttyUSB0", netaddr = 0):
         self._netaddr = netaddr
         self._ser = None
         self._tty = tty
-        self._debug = debug
-        self.fail = False
+        self.fail = True
 
+    def getData(self):
         self.data = dict()
         self.data['Energy'] = dict()
         self.data['PhaseA'] = dict()
         self.data['PhaseB'] = dict()
         self.data['PhaseC'] = dict()
- 
-        self.connect()
+
+        if self._ser is None:
+            self.connect()
         self.getConnect()
         self.openChannel()
         self.getSN()
@@ -243,6 +248,7 @@ class M230:
              rsp = self._ser.read(4)
 
              if(rsp[0] == int(self._netaddr) ):
+                 self.fail = False
                  return True
          except Exception as e:
              print ('getConnect error', e)
@@ -504,4 +510,11 @@ class M230:
 if __name__ == '__main__':
     # execute only if run as a script
     m230 = M230('/dev/moxa')
-    print(json.dumps(m230.data))
+    while True:
+        m230.getData()
+        if m230.fail:
+            print('Data fetch failed')
+            time.sleep(1)
+            continue
+        if debug: print(json.dumps(m230.data, indent=4, sort_keys=True))
+        time.sleep(0.5)
