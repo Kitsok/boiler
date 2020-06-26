@@ -11,7 +11,11 @@ from requests import get
 from requests import post
 from secrets import token, host
 
+debug = False
+debug = True
+
 url_tmpl = host + "api/states/"
+
 headers = {
     'Authorization': token,
     'content-type': 'application/json'
@@ -20,6 +24,26 @@ headers = {
 sensor = {
    'entity_id': 'sensor.inverter_state',
    'state': 'Unknown'
+}
+
+sens2attr = {
+        'sensor.m230_PhaseA_U' : { 'unit_of_measurement': 'V', 'friendly_name': 'Phase A U' },
+        'sensor.m230_PhaseB_U' : { 'unit_of_measurement': 'V', 'friendly_name': 'Phase B U' },
+        'sensor.m230_PhaseC_U' : { 'unit_of_measurement': 'V', 'friendly_name': 'Phase C U' },
+        'sensor.m230_PhaseA_I' : { 'unit_of_measurement': 'A', 'friendly_name': 'Phase A I' },
+        'sensor.m230_PhaseB_I' : { 'unit_of_measurement': 'A', 'friendly_name': 'Phase B I' },
+        'sensor.m230_PhaseC_I' : { 'unit_of_measurement': 'A', 'friendly_name': 'Phase C I' },
+        'sensor.m230_Power_Total' : { 'unit_of_measurement': 'kW', 'friendly_name': 'Sum P' },
+        'sensor.m230_PhaseA_P' : { 'unit_of_measurement': 'kW', 'friendly_name': 'Phase A P' },
+        'sensor.m230_PhaseB_P' : { 'unit_of_measurement': 'kW', 'friendly_name': 'Phase B P' },
+        'sensor.m230_PhaseC_P' : { 'unit_of_measurement': 'kW', 'friendly_name': 'Phase C P' },
+        'sensor.m230_Energy_Sum_Active_plus' : { 'unit_of_measurement': 'kWh', 'friendly_name': 'Q' },
+        'sensor.m230_Energy_Sum_Reactive_plus' : { 'unit_of_measurement': 'kVAh', 'friendly_name': 'S' },
+        'sensor.m230_PhaseA_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase A Cosφ' },
+        'sensor.m230_PhaseB_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase B Cosφ' },
+        'sensor.m230_PhaseC_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase C Cosφ' },
+        'sensor.m230_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Sumφ' },
+        'sensor.m230_freq' : { 'unit_of_measurement': 'Hz', 'friendly_name': 'Grid frequency' },
 }
 
 mydict = dict()
@@ -31,7 +55,6 @@ def mkflatdict(d, _pre='sensor.m230'):
             mkflatdict(v, pre + '_' + k)
         else:
             mydict['{}_{}'.format(pre,k)] =  v
-            # print("{}_{} : {}".format(pre, k, v))
 
 auchCRCHi = [
 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81,
@@ -72,9 +95,6 @@ auchCRCLo = [
 0x48, 0x49, 0x89, 0x4B, 0x8B, 0x8A, 0x4A, 0x4E, 0x8E, 0x8F, 0x4F, 0x8D, 0x4D, 0x4C, 0x8C,
 0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42, 0x43, 0x83, 0x41, 0x81, 0x80,
 0x40]
-
-debug = False
-debug = True
 
 def hexOut(rsp):
     print(''.join(format(x, '02x') for x in rsp))
@@ -125,11 +145,11 @@ class M230:
             self.data['PhaseC'] = dict()
 
             self.openChannel()
-            self.getSN()
+            # self.getSN()
             self.getFreq()
             self.getEn0()
-            self.getEn1()
-            self.getEn2()
+            # self.getEn1()
+            # self.getEn2()
 
             self.getU()
             self.getI()
@@ -177,9 +197,9 @@ class M230:
              self.data['Energy']['Sum'] = dict()
              x = self.data['Energy']['Sum'] 
              x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
-             x['Active_minus'] =  ((int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7]))^0xFFFFFFFF) / 1000.0
+             # x['Active_minus'] =  ((int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7]))^0xFFFFFFFF) / 1000.0
              x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
-             x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
+             # x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -545,11 +565,13 @@ if __name__ == '__main__':
     while True:
         m230.getData()
         mydict = dict()
-        if debug: print(json.dumps(m230.data, indent=4, sort_keys=True))
+        # if debug: print(json.dumps(m230.data, indent=4, sort_keys=True))
         mkflatdict(m230.data, 'sensor.m230')
         for k,v in mydict.items():
             sensor['entity_id'] = k
             sensor['state'] = v
+            sensor['attributes'] = sens2attr.get(k, '')
+            # print(sensor)
             rc = post(url_tmpl + k, headers=headers, json = sensor).json()
             if debug: print(rc)
 
