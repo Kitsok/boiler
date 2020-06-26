@@ -42,7 +42,7 @@ sens2attr = {
         'sensor.m230_PhaseA_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase A Cosφ' },
         'sensor.m230_PhaseB_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase B Cosφ' },
         'sensor.m230_PhaseC_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase C Cosφ' },
-        'sensor.m230_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Sumφ' },
+        'sensor.m230_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Average Cosφ' },
         'sensor.m230_freq' : { 'unit_of_measurement': 'Hz', 'friendly_name': 'Grid frequency' },
 }
 
