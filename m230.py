@@ -38,6 +38,7 @@ sens2attr = {
         'sensor.m230_PhaseB_P' : { 'unit_of_measurement': 'kW', 'friendly_name': 'Phase B P' },
         'sensor.m230_PhaseC_P' : { 'unit_of_measurement': 'kW', 'friendly_name': 'Phase C P' },
         'sensor.m230_Energy_Sum_Active_plus' : { 'unit_of_measurement': 'kWh', 'friendly_name': 'Q' },
+        'sensor.m230_Energy_Sum_New_plus' : { 'unit_of_measurement': 'kWh', 'friendly_name': 'Qnew' },
         'sensor.m230_Energy_Sum_Reactive_plus' : { 'unit_of_measurement': 'kVAh', 'friendly_name': 'S' },
         'sensor.m230_PhaseA_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase A Cosφ' },
         'sensor.m230_PhaseB_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase B Cosφ' },
@@ -200,6 +201,8 @@ class M230:
              # x['Active_minus'] =  ((int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7]))^0xFFFFFFFF) / 1000.0
              x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
              # x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
+             # Hack
+             x['New_plus'] = round(x['Active_plus'] - 56801.358, 2)
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
