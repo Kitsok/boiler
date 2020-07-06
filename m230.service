@@ -1,0 +1,10 @@
+[Unit]
+Description=Mercury-230 power meter poller
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/sbin/m230.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
