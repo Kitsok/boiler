@@ -139,12 +139,17 @@ class M230:
             self.connect()
 
         self.getConnect()
-        if not self.fail:
-            self.data['Energy'] = dict()
-            self.data['PhaseA'] = dict()
-            self.data['PhaseB'] = dict()
-            self.data['PhaseC'] = dict()
 
+        self.data['Energy'] = dict()
+        self.data['PhaseA'] = dict()
+        self.data['PhaseB'] = dict()
+        self.data['PhaseC'] = dict()
+
+        self.data['PhaseA']['U']  = 0
+        self.data['PhaseB']['U']  = 0
+        self.data['PhaseC']['U']  = 0
+
+        if not self.fail:
             self.openChannel()
             # self.getSN()
             self.getFreq()
@@ -296,6 +301,7 @@ class M230:
     def getConnect(self):
          if self.fail: return False
          try:
+             if (debug): print("DEBUG: Trying connecting")
              self._ser.reset_input_buffer()
              self._ser.flush()
              dataIn = [ int(self._netaddr), 0x00]
@@ -306,6 +312,7 @@ class M230:
                  self.fail = False
                  return True
          except Exception as e:
+             if (debug): print("DEBUG: getConnect failed")
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
              pass
@@ -568,7 +575,7 @@ if __name__ == '__main__':
     while True:
         m230.getData()
         mydict = dict()
-        # if debug: print(json.dumps(m230.data, indent=4, sort_keys=True))
+        if debug: print(json.dumps(m230.data, indent=4, sort_keys=True))
         mkflatdict(m230.data, 'sensor.m230')
         for k,v in mydict.items():
             sensor['entity_id'] = k
