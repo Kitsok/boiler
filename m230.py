@@ -148,6 +148,12 @@ class M230:
         self.data['PhaseA']['U']  = 0
         self.data['PhaseB']['U']  = 0
         self.data['PhaseC']['U']  = 0
+        self.data['PhaseA']['P']  = 0
+        self.data['PhaseB']['P']  = 0
+        self.data['PhaseC']['P']  = 0
+        self.data['PhaseA']['I']  = 0
+        self.data['PhaseB']['I']  = 0
+        self.data['PhaseC']['I']  = 0
 
         if not self.fail:
             self.openChannel()
