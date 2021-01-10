@@ -1,7 +1,6 @@
 [Unit]
 Description=OpenTherm gateway service
 Requires=hass.service
-Requires=boiler_control.service
 
 [Service]
 Type=simple
