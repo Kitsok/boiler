@@ -17,6 +17,7 @@ debug = True
 # Home
 url_setpoint = host + "api/states/sensor.heatant_setpoint"
 url_heatant_temp = host + "api/states/sensor.heatant_temp"
+url_boiler_power = host + "api/states/sensor.boiler_power"
 
 headers = {
     "Authorization": token,
@@ -31,6 +32,15 @@ heatant_temp = {
     },
     "entity_id": "sensor.heatant_temp",
     "state": "22.7"
+}
+
+boiler_power = {
+    "attributes": {
+         "friendly_name": "Boiler Power",
+         "unit_of_measurement": "%"
+    },
+    "entity_id": "sensor.boiler_power",
+    "state": "30"
 }
 
 # Fetch setpoint from HA
@@ -97,4 +107,10 @@ if 'Tout' in boiler_data:
     heatant_temp['state'] = boiler_data['Tout']
     response = post(url_heatant_temp, headers = headers, json = heatant_temp)
     if debug: print(json.dumps(heatant_temp))
+
+if 'Modulation' in boiler_data:
+    boiler_power['state'] = boiler_data['Modulation']
+    response = post(url_boiler_power, headers = headers, json = boiler_power)
+    if debug: print(json.dumps(boiler_power))
+
 
