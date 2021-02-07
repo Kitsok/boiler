@@ -110,7 +110,7 @@ try:
     Ti = 39.2
     Td = 0
     MAX_I = 73.0
-    MIN_I = -20.0
+    MIN_I = 0.0
 
     # Anti wind-up
     if (I > MAX_I): I = MAX_I
