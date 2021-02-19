@@ -49,7 +49,7 @@ boiler_fault = {
          "friendly_name": "Boiler Fault",
     },
     "entity_id": "sensor.boiler_fault",
-    "state": False
+    "state": "0"
 }
 
 # Fetch setpoint from HA
@@ -123,7 +123,10 @@ if 'Modulation' in boiler_data:
     if debug: print(json.dumps(boiler_power))
 
 if 'Fault' in boiler_data:
-    boiler_fault['state'] = boiler_data['Fault']
+    if boiler_data['Fault'] == True:
+         boiler_fault['Fault'] = 1
+    else:
+         boiler_fault['Fault'] = 0
     response = post(url_boiler_fault, headers = headers, json = boiler_power)
     if debug: print(json.dumps(boiler_fault))
 
