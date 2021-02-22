@@ -49,7 +49,7 @@ boiler_fault = {
          "friendly_name": "Boiler Fault",
     },
     "entity_id": "sensor.boiler_fault",
-    "state": "0"
+    "state": False
 }
 
 # Fetch setpoint from HA
@@ -58,9 +58,6 @@ try:
     setpoint = round(float(get(url_setpoint, headers=headers).json()["state"]))
 except Exception as ex:
     if debug: print("Error", ex)
-
-if debug: print("Setpoint:", setpoint)
-
 
 # Talk to OpenTherm gateway
 port = '/dev/otgw'
@@ -89,7 +86,12 @@ while (True):
     if tries >= maxtries:
         sys.exit()
 
+    if len(sys.argv) != 1 and int(sys.argv[1] is not None):
+        print("Override setpoint:", int(sys.argv[1]))
+        setpoint = int(sys.argv[1])
+
     if setpoint != None:
+        if debug: print("Setpoint:", setpoint)
         ser.write(bytearray("s " + str(setpoint) + "\r", "ascii"))
         ser.flush()
         trash = ser.readline().decode('ascii').rstrip()
@@ -102,6 +104,7 @@ while (True):
         tries = tries + 1
         continue
     try:
+        if debug: print("From boiler", data_str)
         boiler_data = json.loads(data_str)
     except:
         tries = tries + 1
@@ -123,10 +126,7 @@ if 'Modulation' in boiler_data:
     if debug: print(json.dumps(boiler_power))
 
 if 'Fault' in boiler_data:
-    if boiler_data['Fault'] == True:
-         boiler_fault['Fault'] = 1
-    else:
-         boiler_fault['Fault'] = 0
-    response = post(url_boiler_fault, headers = headers, json = boiler_power)
+    boiler_fault['state'] = boiler_data['Fault']
+    response = post(url_boiler_fault, headers = headers, json = boiler_fault)
     if debug: print(json.dumps(boiler_fault))
 
