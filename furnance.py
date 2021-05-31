@@ -1,5 +1,6 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 # -*- coding: utf8 -*-
+
 import serial
 import time
 import struct
@@ -74,7 +75,7 @@ class ComPort(serial.Serial):
     def write(self, buffer, obj_name=None):
         if self.isOpen():
             #self.flush()
-            serial.Serial.write(self,buffer)
+            serial.Serial.write(self,str.encode(buffer))
             #self.flushOutput()
             self.log(buffer, obj_name, 'writing')
             return (True,'')
@@ -340,7 +341,7 @@ class OwenProtocol:#Класс, реализующий протокол ОВЕН
         if not (self.dataSize == 4 + additionalBytes):
             raise OwenUnpackError('OwenProtocol::wrong size of data ({0}) when IEEE32 unpacking, should be {1}!'.format(self.dataSize,(4 + additionalBytes)),\
                                   self.data)
-        value = struct.unpack('>f',self.data[0:4])[0]
+        value = struct.unpack('>f',str.encode(self.data)[0:4])[0]
         if withTime:
             time = (((ord(self.data[timePos]) & 0xff) << 8) | (ord(self.data[timePos+1]) & 0xff )) & 0xffff
         else:
@@ -355,7 +356,7 @@ class OwenProtocol:#Класс, реализующий протокол ОВЕН
     def unpackFloat24(self, withIndex = False, withTime = False):#извлекает из данных число с плаваЮщей точкой
         if not (self.dataSize == 3):
             raise OwenUnpackError('OwenProtocol::wrong size of data ({0}) when float24 unpacking!'.format(self.dataSize),self.data)
-        value = struct.unpack('>f',self.data[0:3]+'\x00')[0]
+        value = struct.unpack('>f',str.encode(self.data)[0:3]+'\x00')[0]
         result = dict(value = value, time = -1, index = -1)
         return result
 
@@ -365,7 +366,7 @@ class OwenProtocol:#Класс, реализующий протокол ОВЕН
         if self.dataSize == 1:
             self.data = '\x00' + self.data  # дополняем до двух байтов
         #value = ord(self.data[1]) + (ord(self.data[0])<<8 & 0xffff);
-        value = struct.unpack('>h',self.data[0:2])[0]
+        value = struct.unpack('>h',str.encode(self.data)[0:2])[0]
         result = dict(value = value, time = -1, index = -1)
         return result
 
@@ -375,7 +376,7 @@ class OwenProtocol:#Класс, реализующий протокол ОВЕН
         if self.dataSize == 1:
             self.data += '\x00' # дополняем до двух байтов
         #value = ord(self.data[1]) + (ord(self.data[0])<<8 & 0xffff);
-        value = struct.unpack('>H',self.data[0:2])[0]
+        value = struct.unpack('>H',str.encode(self.data)[0:2])[0]
         result = dict(value = value, time = -1, index = -1)
         return result
 
@@ -389,14 +390,14 @@ class OwenProtocol:#Класс, реализующий протокол ОВЕН
     def unpackChar(self):#извлекает из данных байт со знаком, возвращает целый тип
         if not (self.dataSize == 1):
             raise OwenUnpackError('OwenProtocol::wrong size of data ({0}) when char unpacking!'.format(self.dataSize),self.data)
-        value = struct.unpack('b',self.data[0])[0]
+        value = struct.unpack('b',str.encode(self.data)[0])[0]
         result = dict(value = value, time = -1, index = -1)
         return result
 
     def unpackUnsignedChar(self):#извлекает из данных байт без знака, возвращает целый тип
         if not (self.dataSize == 1):
             raise OwenUnpackError('OwenProtocol::wrong size of data ({0}) when char unpacking!'.format(self.dataSize),self.data)
-        value = struct.unpack('B',self.data[0])[0]
+        value = struct.unpack('B',str.encode(self.data)[0])[0]
         result = dict(value = value, time = -1, index = -1)
         return result
 
@@ -514,10 +515,9 @@ class OwenDevice:
         self.__TestResponseStringForStringType = "#HGGMTMOHJHJLJIKTLGLKVUMM"+chr(13)#эта строка будет "читаться" из устройства, если serialPort=None
         self.__TestResponseString = self.__TestResponseStringForStringType
 
-
     def DebugMessage(self,message):#вывод отладочных сообщений
         if self.Debug:
-            print('HAHA', message)
+            print(message)
 
     def GetDeviceName(self):#возвращает имя устройства
         return self.GetString('dev')
@@ -565,7 +565,7 @@ class OwenDevice:
             self.serialPort.write(self.owenProtocol.frameAscii)
         return True
 
-    def ReadFromPort(self):#чтение ответа из порта
+    def ReadFromPort(self):
         self.owenProtocol.frameAscii=''
         if self.serialPort!=None:
             (flag,charsFromPort)=self.serialPort.read(self.owenProtocol.waitBytes)
@@ -573,7 +573,7 @@ class OwenDevice:
                 raise OwenProtocolError('OwenDevice::Error occured when recieving data from serial port!')
             if charsFromPort=='':
                 raise OwenProtocolError('OwenDevice::No data recieved from serial port!')
-            self.owenProtocol.frameAscii=charsFromPort
+            self.owenProtocol.frameAscii=charsFromPort.decode()
         else:
             self.owenProtocol.frameAscii= self.TestResponseString#возвращаем эту строку если порт не определён
         return self.owenProtocol.frameAscii
