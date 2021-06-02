@@ -51,6 +51,7 @@ furnance_state = {
 def Run():
     instrument = minimalmodbus.Instrument('/dev/ttyUSB0', 16)
     instrument.serial.baudrate = 9600
+    instrument.serial.timeout  = 0.7
     instrument.mode = minimalmodbus.MODE_ASCII
 
     while True:
@@ -58,17 +59,20 @@ def Run():
             State = 0
             Temp = 0
             Power = 0
-            SetPoint = 0
             Step = 0
 
             State = instrument.read_register(17, 0)
-            Temp = instrument.read_register(2, 1)
+            # Manual alternative, ignores sign FIXME
+            #temp_lo = instrument.read_register(2,0)
+            #temp_hi = instrument.read_register(1,0)
+            #temp_res = ((temp_hi << 16) + temp_lo) / 10
+            #print('DEBUG Temp read_register', temp_res)
+            Temp = instrument.read_long(1, functioncode=3, signed=True, byteorder=minimalmodbus.BYTEORDER_BIG) / 10
             Power = instrument.read_register(12, 1)
             if State == 1:
-                SetPoint = instrument.read_register(13, 1)
                 Step = instrument.read_register(16, 0)
 
-            if DEBUG: print('ON::State: {} Step: {} SetPoint: {} Power: {}% Temp: {}'.format(State, Step, SetPoint, Power, Temp))
+            if DEBUG: print('ON::State: {} Step: {} Power: {}% Temp: {}'.format(State, Step, Power, Temp))
             furnance_temp['state'] = Temp
             furnance_power['state'] = Power
             furnance_state['state'] = State
