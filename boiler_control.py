@@ -103,10 +103,10 @@ try:
     deltaE = pid['E'] - E
     D = deltaE / deltaT
     D = 0.0 # FIXME This is to disable derivative component
-    I = pid['I'] + (E * 1.3)
+    I = pid['I'] + (E * 0.8)
 
     # Constants
-    Kp = 16.9
+    Kp = 13.4
     Ti = 39.2
     Td = 0
     MAX_I = 73.0

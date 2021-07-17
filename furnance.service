@@ -1,0 +1,13 @@
+[Unit]
+Description=TRM251 Kiln Controller Polling service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/sbin/furnance.py
+Restart=always
+RestartSec=60
+StartLimitInterval=400
+StartLimitBurst=999
+
+[Install]
+WantedBy=multi-user.target
