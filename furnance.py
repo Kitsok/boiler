@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
 import time
@@ -49,7 +49,7 @@ furnance_state = {
 ########################################################################################
 
 def Run():
-    instrument = minimalmodbus.Instrument('/dev/ttyUSB0', 16)
+    instrument = minimalmodbus.Instrument('/dev/ttyr00', 16)
     instrument.serial.baudrate = 9600
     instrument.mode = minimalmodbus.MODE_ASCII
 
