@@ -1,5 +1,6 @@
 [Unit]
 Description=TRM251 Kiln Controller Polling service
+Requires=hass.service
 
 [Service]
 Type=simple
