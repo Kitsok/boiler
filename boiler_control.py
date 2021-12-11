@@ -78,8 +78,9 @@ try:
 
     k = (settings['boiler_max_temp'] - settings['boiler_min_temp']) / (settings['boiler_min_outside'] - settings['boiler_max_outside'])
     b = settings['boiler_max_temp'] - (k * settings['boiler_min_outside'])
-    calc_heatant = b + (k * temps['street_temperature'])
-    if debug: print('DEPRECATED: Calculated heatant temperature:', calc_heatant)
+    # DEPRECATED
+    # calc_heatant = b + (k * temps['street_temperature'])
+    # if debug: print('DEPRECATED: Calculated heatant temperature:', calc_heatant)
 
     setpoint = get(url_ui_thermostate, headers=headers).json()['attributes']['temperature']
     current_temp = temps['kitchen_temperature']
@@ -106,11 +107,11 @@ try:
     I = pid['I'] + (E * 0.8)
 
     # Constants
-    Kp = 13.4
-    Ti = 39.2
+    Kp = 39.6
+    Ti = 105.2
     Td = 0
-    MAX_I = 73.0
-    MIN_I = 0.0
+    MAX_I = 90.0
+    MIN_I = -5.0
 
     # Anti wind-up
     if (I > MAX_I): I = MAX_I
