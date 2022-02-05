@@ -160,8 +160,10 @@ class M230:
             # self.getSN()
             self.getFreq()
             self.getEn0()
-            # self.getEn1()
-            # self.getEn2()
+            self.getEn1()
+            self.getEn2()
+            self.getEn3()
+            self.getEn4()
 
             self.getU()
             self.getI()
@@ -207,7 +209,7 @@ class M230:
              rsp= self._ser.read(19)
 
              self.data['Energy']['Sum'] = dict()
-             x = self.data['Energy']['Sum'] 
+             x = self.data['Energy']['Sum']
              x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
              # x['Active_minus'] =  ((int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7]))^0xFFFFFFFF) / 1000.0
              x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
@@ -221,7 +223,7 @@ class M230:
              pass
          return False
 
-    ########################################################################    A+ A- R+ R- T1
+    ########################################################################    A+ A- R+ R- Sum
     def getEn1(self):
          if self.fail: return False
          try:
@@ -231,12 +233,10 @@ class M230:
              self._ser.write([ int(self._netaddr),0x05,0x00,0x01, crc16Lo(dataIn), crc16Hi(dataIn) ])
              rsp= self._ser.read(19)
 
-             self.data['Energy']['Day'] = dict()
-             x = self.data['Energy']['Day'] 
+             self.data['Energy']['Sum1'] = dict()
+             x = self.data['Energy']['Sum1']
              x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
-             x['Active_minus'] =  ((int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7]))^0xFFFFFFFF) / 1000.0
              x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
-             x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -244,7 +244,7 @@ class M230:
              pass
          return False
 
-    ########################################################################    A+ A- R+ R- T1
+    ########################################################################    A+ A- R+ R- Sum
     def getEn2(self):
          if self.fail: return False
          try:
@@ -254,12 +254,10 @@ class M230:
              self._ser.write([ int(self._netaddr),0x05,0x00,0x02, crc16Lo(dataIn), crc16Hi(dataIn) ])
              rsp= self._ser.read(19)
 
-             self.data['Energy']['Night'] = dict()
-             x = self.data['Energy']['Night'] 
+             self.data['Energy']['Sum2'] = dict()
+             x = self.data['Energy']['Sum2']
              x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
-             x['Active_minus'] =  ((int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7]))^0xFFFFFFFF) / 1000.0
              x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
-             x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -267,7 +265,7 @@ class M230:
              pass
          return False
 
-    ########################################################################    A+ A- R+ R- T1
+    ########################################################################    A+ A- R+ R- Sum
     def getEn3(self):
          if self.fail: return False
          try:
@@ -276,16 +274,19 @@ class M230:
              dataIn = [ int(self._netaddr),0x05,0x00,0x03]
              self._ser.write([ int(self._netaddr),0x05,0x00,0x03, crc16Lo(dataIn), crc16Hi(dataIn) ])
              rsp= self._ser.read(19)
-             Aplus  = int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])
-             Aminus =  int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7])
-             Rplus  =  int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])
-             Rminus  = int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15])
+
+             self.data['Energy']['Sum3'] = dict()
+             x = self.data['Energy']['Sum3']
+             x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
+             x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
+             return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
-         return Aplus / 1000.0, (Aminus^0xFFFFFFFF) / 1000.0, Rplus / 1000.0, (Rminus^0xFFFFFFFF) / 1000.0
+             pass
+         return False
 
-    ########################################################################    A+ A- R+ R- T1
+    ########################################################################    A+ A- R+ R- Sum
     def getEn4(self):
          if self.fail: return False
          try:
@@ -294,14 +295,17 @@ class M230:
              dataIn = [ int(self._netaddr),0x05,0x00,0x04]
              self._ser.write([ int(self._netaddr),0x05,0x00,0x04, crc16Lo(dataIn), crc16Hi(dataIn) ])
              rsp= self._ser.read(19)
-             Aplus  = int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])
-             Aminus =  int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7])
-             Rplus  =  int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])
-             Rminus  = int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15])
+
+             self.data['Energy']['Sum4'] = dict()
+             x = self.data['Energy']['Sum4']
+             x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
+             x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
+             return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
-         return Aplus / 1000.0, (Aminus^0xFFFFFFFF) / 1000.0, Rplus / 1000.0, (Rminus^0xFFFFFFFF) / 1000.0
+             pass
+         return False
 
     #########################################################################     try to find unit
     def getConnect(self):
