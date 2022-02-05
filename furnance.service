@@ -1,0 +1,15 @@
+[Unit]
+Description=TRM251 Kiln Controller Polling service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/lib/npreal2/driver/mxaddsvr 172.28.0.30 1
+ExecStopPost=/usr/lib/npreal2/driver/mxdelsvr  172.28.0.30
+ExecStart=/usr/bin/python3 /usr/local/sbin/furnance.py
+Restart=always
+RestartSec=60
+StartLimitInterval=400
+StartLimitBurst=999
+
+[Install]
+WantedBy=multi-user.target
