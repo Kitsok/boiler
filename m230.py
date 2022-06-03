@@ -37,13 +37,17 @@ sens2attr = {
         'sensor.m230_PhaseA_P' : { 'unit_of_measurement': 'W', 'friendly_name': 'Phase A P' },
         'sensor.m230_PhaseB_P' : { 'unit_of_measurement': 'W', 'friendly_name': 'Phase B P' },
         'sensor.m230_PhaseC_P' : { 'unit_of_measurement': 'W', 'friendly_name': 'Phase C P' },
+        'sensor.m230_PhaseA_S' : { 'unit_of_measurement': 'VA', 'friendly_name': 'Phase A S' },
+        'sensor.m230_PhaseB_S' : { 'unit_of_measurement': 'VA', 'friendly_name': 'Phase B S' },
+        'sensor.m230_PhaseC_S' : { 'unit_of_measurement': 'VA', 'friendly_name': 'Phase C S' },
+        'sensor.m230_Reactive_Total' : { 'unit_of_measurement': 'W', 'friendly_name': 'Sum S' },
         'sensor.m230_Energy_Sum_Active_plus' : { 'unit_of_measurement': 'kWh', 'friendly_name': 'Q' },
         'sensor.m230_Energy_Sum_New_plus' : { 'unit_of_measurement': 'kWh', 'friendly_name': 'Qnew' },
         'sensor.m230_Energy_Sum_Reactive_plus' : { 'unit_of_measurement': 'kVAh', 'friendly_name': 'S' },
-        'sensor.m230_PhaseA_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase A Cosφ' },
-        'sensor.m230_PhaseB_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase B Cosφ' },
-        'sensor.m230_PhaseC_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase C Cosφ' },
-        'sensor.m230_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Average Cosφ' },
+        'sensor.m230_PhaseA_CosPhi' : { 'unit_of_measurement': '', 'friendly_name': 'Phase A Cosφ' },
+        'sensor.m230_PhaseB_CosPhi' : { 'unit_of_measurement': '', 'friendly_name': 'Phase B Cosφ' },
+        'sensor.m230_PhaseC_CosPhi' : { 'unit_of_measurement': '', 'friendly_name': 'Phase C Cosφ' },
+        'sensor.m230_CosPhi' : { 'unit_of_measurement': '', 'friendly_name': 'Average Cosφ' },
         'sensor.m230_freq' : { 'unit_of_measurement': 'Hz', 'friendly_name': 'Grid frequency' },
 }
 
@@ -372,10 +376,15 @@ class M230:
     def getP(self):
         if self.fail: return False
         try:
-            self.data['PhaseA']['P'] = round(self.data['PhaseA']['U'] * self.data['PhaseA']['I'], 2)
-            self.data['PhaseB']['P'] = round(self.data['PhaseB']['U'] * self.data['PhaseB']['I'], 2)
-            self.data['PhaseC']['P'] = round(self.data['PhaseC']['U'] * self.data['PhaseC']['I'], 2)
+            self.data['PhaseA']['P'] = round(self.data['PhaseA']['U'] * self.data['PhaseA']['I'] * self.data['PhaseA']['CosPhi'], 2)
+            self.data['PhaseB']['P'] = round(self.data['PhaseB']['U'] * self.data['PhaseB']['I'] * self.data['PhaseB']['CosPhi'], 2)
+            self.data['PhaseC']['P'] = round(self.data['PhaseC']['U'] * self.data['PhaseC']['I'] * self.data['PhaseC']['CosPhi'], 2)
             self.data['Power_Total'] = round(self.data['PhaseA']['P'] + self.data['PhaseB']['P'] + self.data['PhaseC']['P'], 2)
+
+            self.data['PhaseA']['S'] = round(self.data['PhaseA']['U'] * self.data['PhaseA']['I'] - self.data['PhaseA']['P'], 2)
+            self.data['PhaseB']['S'] = round(self.data['PhaseB']['U'] * self.data['PhaseB']['I'] - self.data['PhaseB']['P'], 2)
+            self.data['PhaseC']['S'] = round(self.data['PhaseC']['U'] * self.data['PhaseC']['I'] - self.data['PhaseC']['P'], 2)
+            self.data['Reactive_Total'] = round(self.data['PhaseA']['S'] + self.data['PhaseB']['S'] + self.data['PhaseC']['S'], 2)
             return True
         except Exception as e:
             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -499,10 +508,10 @@ class M230:
              if( bt10[1] == '1'): P3 = P3        #   0x40
              if( bt10[0] == '1'): P3 = P3 * -1   #   0x80
 
-             self.data['PhaseA']['CosPhi'] = P1 / 10.0
-             self.data['PhaseB']['CosPhi'] = P2 / 10.0
-             self.data['PhaseC']['CosPhi'] = P3 / 10.0
-             self.data['CosPhi'] = P / 10.0
+             self.data['PhaseA']['CosPhi'] = P1 / 1000.0
+             self.data['PhaseB']['CosPhi'] = P2 / 1000.0
+             self.data['PhaseC']['CosPhi'] = P3 / 1000.0
+             self.data['CosPhi'] = P / 1000.0
              return True
 
          except Exception as e:
@@ -591,8 +600,8 @@ if __name__ == '__main__':
             sensor['entity_id'] = k
             sensor['state'] = v
             sensor['attributes'] = sens2attr.get(k, '')
-            # print(sensor)
+            if debug: print("Going to post", url_tmpl + k)
             rc = post(url_tmpl + k, headers=headers, json = sensor).json()
-            if debug: print(rc)
+            if debug: print("Result", rc)
 
         time.sleep(30)
