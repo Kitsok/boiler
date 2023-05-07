@@ -156,23 +156,24 @@ class M230:
         self.data['PhaseC']['I']  = 0
 
     def getData(self):
-        if self.fail:
-            if self.connect() and self.openChannel():
-                # self.getSN()
-                self.selfClean()
-                self.getFreq()
-                self.getEn0()
-                self.getEn1()
-                self.getEn2()
-                self.getEn3()
-                self.getEn4()
+        if self.connect() and self.openChannel():
+            # self.getSN()
+            self.selfClean()
+            self.getFreq()
+            self.getEn0()
+            self.getEn1()
+            self.getEn2()
+            self.getEn3()
+            self.getEn4()
 
-                self.getU()
-                self.getI()
-                self.getCosF()
-                self.getP()
-                if not self.fail:
-                    return True
+            self.getU()
+            self.getI()
+            self.getCosF()
+            self.getP()
+            if not self.fail:
+                return True
+        else:
+            if debug: print("Bad data", json.dumps(m230.data, indent=4, sort_keys=True))
         return False
 
     def connect(self):
@@ -597,6 +598,7 @@ class M230:
 if __name__ == '__main__':
     m230 = M230('/dev/moxa', 0)
     while True:
+        print('Go')
         if not m230.getData():
             continue
 
@@ -613,4 +615,4 @@ if __name__ == '__main__':
             rc = post(url_tmpl + k, headers=headers, json = sensor).json()
             # if debug: print("Result", rc)
 
-        time.sleep(30)
+        time.sleep(10)
