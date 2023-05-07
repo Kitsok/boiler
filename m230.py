@@ -135,15 +135,11 @@ class M230:
         self._tty = tty
         self.fail = True
 
-    def getData(self):
-        self.data = dict()
-        self.data['error'] = None
-
-        if self.fail:
-            self.connect()
-
+    def selfClean(self):
         self.getConnect()
 
+        self.data = dict()
+        self.data['error'] = None
         self.data['Energy'] = dict()
         self.data['PhaseA'] = dict()
         self.data['PhaseB'] = dict()
@@ -159,20 +155,25 @@ class M230:
         self.data['PhaseB']['I']  = 0
         self.data['PhaseC']['I']  = 0
 
-        if not self.fail:
-            self.openChannel()
-            # self.getSN()
-            self.getFreq()
-            self.getEn0()
-            self.getEn1()
-            self.getEn2()
-            self.getEn3()
-            self.getEn4()
+    def getData(self):
+        if self.fail:
+            if self.connect() and self.openChannel():
+                # self.getSN()
+                self.selfClean()
+                self.getFreq()
+                self.getEn0()
+                self.getEn1()
+                self.getEn2()
+                self.getEn3()
+                self.getEn4()
 
-            self.getU()
-            self.getI()
-            self.getCosF()
-            self.getP()
+                self.getU()
+                self.getI()
+                self.getCosF()
+                self.getP()
+                if not self.fail:
+                    return True
+        return False
 
     def connect(self):
         try:
@@ -345,6 +346,10 @@ class M230:
              self.data['PhaseA']['U']  = (int(rsp[1]<<16) + int(rsp[3]<<8) + int(rsp[2])) / 100.0
              self.data['PhaseB']['U']  = (int(rsp[4]<<16) + int(rsp[6]<<8) + int(rsp[5])) / 100.0
              self.data['PhaseC']['U']  = (int(rsp[7]<<16) + int(rsp[9]<<8) + int(rsp[8])) / 100.0
+             if self.data['PhaseA']['U'] > 500 or self.data['PhaseB']['U'] > 500 or self.data['PhaseC']['U'] > 500:
+                 self.data['error'] = 'Overvoltage'
+                 self.fail = True
+                 return False
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -592,16 +597,20 @@ class M230:
 if __name__ == '__main__':
     m230 = M230('/dev/moxa', 0)
     while True:
-        m230.getData()
+        if not m230.getData():
+            continue
+
         mydict = dict()
         if debug: print(json.dumps(m230.data, indent=4, sort_keys=True))
         mkflatdict(m230.data, 'sensor.m230')
         for k,v in mydict.items():
             sensor['entity_id'] = k
+            if v is None:
+                v = 'None'
             sensor['state'] = v
             sensor['attributes'] = sens2attr.get(k, '')
-            if debug: print("Going to post", url_tmpl + k)
+            # if debug: print("Going to post", url_tmpl + k)
             rc = post(url_tmpl + k, headers=headers, json = sensor).json()
-            if debug: print("Result", rc)
+            # if debug: print("Result", rc)
 
         time.sleep(30)
