@@ -371,6 +371,10 @@ class M230:
              self.data['PhaseA']['I']  = (int(rsp[1]<<16) + int(rsp[3]<<8) + int(rsp[2])) / 1000.0
              self.data['PhaseB']['I']  = (int(rsp[4]<<16) + int(rsp[6]<<8) + int(rsp[5])) / 1000.0
              self.data['PhaseC']['I']  = (int(rsp[7]<<16) + int(rsp[9]<<8) + int(rsp[8])) / 1000.0
+             if self.data['PhaseA']['I'] > 50 or self.data['PhaseB']['I'] > 50 or self.data['PhaseC']['I'] > 50:
+                 self.data['error'] = 'Overcurrent'
+                 self.fail = True
+                 return False
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
