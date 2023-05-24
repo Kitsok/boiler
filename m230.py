@@ -347,7 +347,7 @@ class M230:
              self.data['PhaseA']['U']  = (int(rsp[1]<<16) + int(rsp[3]<<8) + int(rsp[2])) / 100.0
              self.data['PhaseB']['U']  = (int(rsp[4]<<16) + int(rsp[6]<<8) + int(rsp[5])) / 100.0
              self.data['PhaseC']['U']  = (int(rsp[7]<<16) + int(rsp[9]<<8) + int(rsp[8])) / 100.0
-             if self.data['PhaseA']['U'] > 500 or self.data['PhaseB']['U'] > 500 or self.data['PhaseC']['U'] > 500:
+             if self.data['PhaseA']['U'] > 300 or self.data['PhaseB']['U'] > 300 or self.data['PhaseC']['U'] > 300:
                  self.data['error'] = 'Overvoltage'
                  self.fail = True
                  return False
@@ -371,7 +371,7 @@ class M230:
              self.data['PhaseA']['I']  = (int(rsp[1]<<16) + int(rsp[3]<<8) + int(rsp[2])) / 1000.0
              self.data['PhaseB']['I']  = (int(rsp[4]<<16) + int(rsp[6]<<8) + int(rsp[5])) / 1000.0
              self.data['PhaseC']['I']  = (int(rsp[7]<<16) + int(rsp[9]<<8) + int(rsp[8])) / 1000.0
-             if self.data['PhaseA']['I'] > 50 or self.data['PhaseB']['I'] > 50 or self.data['PhaseC']['I'] > 50:
+             if self.data['PhaseA']['I'] > 40 or self.data['PhaseB']['I'] > 40 or self.data['PhaseC']['I'] > 40:
                  self.data['error'] = 'Overcurrent'
                  self.fail = True
                  return False
