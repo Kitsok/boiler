@@ -3,6 +3,7 @@
 
 import time
 import minimalmodbus
+import sys
 
 import json
 from requests import get, post
@@ -49,11 +50,17 @@ furnance_state = {
 ########################################################################################
 
 def Run():
+    print("Run")
     instrument = minimalmodbus.Instrument('/dev/ttyr00', 16)
+    print("Run")
     instrument.serial.baudrate = 9600
+    print("Run")
     instrument.mode = minimalmodbus.MODE_ASCII
+    print("Run")
+    error_cnt=0
 
     while True:
+        print("New try")
         try:
             State = 0
             Temp = 0
@@ -76,10 +83,14 @@ def Run():
             response = post(url_temp, headers = headers, json = furnance_temp)
             response = post(url_power, headers = headers, json = furnance_power)
             response = post(url_state, headers = headers, json = furnance_state)
-            time.sleep(60.0)
+            error_cnt = 0
+            time.sleep(10.0)
         except Exception as e:
             if DEBUG: print('Retry reading', e)
-            time.sleep(1.0)
+            # time.sleep(1)
+            error_cnt = error_cnt + 1
+            if error_cnt > 500:
+                sys.exit()
             pass
 
 while True:
