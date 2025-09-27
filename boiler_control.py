@@ -68,6 +68,7 @@ pid = {}
 try:
     settings = boiler['settings']
     temps = boiler['data']
+    print('DEBUG', temps)
 
     # FIXME DEBUG
     # settings["boiler_min_outside"] = -10
@@ -82,7 +83,9 @@ try:
     # calc_heatant = b + (k * temps['street_temperature'])
     # if debug: print('DEPRECATED: Calculated heatant temperature:', calc_heatant)
 
+    print('DEBUG', get(url_ui_thermostate, headers=headers).json())
     setpoint = get(url_ui_thermostate, headers=headers).json()['attributes']['temperature']
+    if debug: print('Thermostate:', json.dumps(setpoint))
     current_temp = temps['kitchen_temperature']
 
     try:
@@ -161,7 +164,7 @@ try:
 except Exception as ex:
     print('Error:', ex)
     heater_on = True
-    calc_heatant = 50 # FIXME must be settable (failsafe heatant temperature
+    calc_heatant = 60 # FIXME must be settable (failsafe heatant temperature
 
 target_temp = round(calc_heatant)
 
