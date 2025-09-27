@@ -1,0 +1,11 @@
+[Unit]
+Description=MAP Inverter gateway service to Newbie
+Requires=qemu-kvm.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/cycler.sh new_mapgw.py 60
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
