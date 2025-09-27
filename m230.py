@@ -37,13 +37,17 @@ sens2attr = {
         'sensor.m230_PhaseA_P' : { 'unit_of_measurement': 'W', 'friendly_name': 'Phase A P' },
         'sensor.m230_PhaseB_P' : { 'unit_of_measurement': 'W', 'friendly_name': 'Phase B P' },
         'sensor.m230_PhaseC_P' : { 'unit_of_measurement': 'W', 'friendly_name': 'Phase C P' },
+        'sensor.m230_PhaseA_S' : { 'unit_of_measurement': 'VA', 'friendly_name': 'Phase A S' },
+        'sensor.m230_PhaseB_S' : { 'unit_of_measurement': 'VA', 'friendly_name': 'Phase B S' },
+        'sensor.m230_PhaseC_S' : { 'unit_of_measurement': 'VA', 'friendly_name': 'Phase C S' },
+        'sensor.m230_Reactive_Total' : { 'unit_of_measurement': 'W', 'friendly_name': 'Sum S' },
         'sensor.m230_Energy_Sum_Active_plus' : { 'unit_of_measurement': 'kWh', 'friendly_name': 'Q' },
         'sensor.m230_Energy_Sum_New_plus' : { 'unit_of_measurement': 'kWh', 'friendly_name': 'Qnew' },
         'sensor.m230_Energy_Sum_Reactive_plus' : { 'unit_of_measurement': 'kVAh', 'friendly_name': 'S' },
-        'sensor.m230_PhaseA_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase A Cosφ' },
-        'sensor.m230_PhaseB_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase B Cosφ' },
-        'sensor.m230_PhaseC_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Phase C Cosφ' },
-        'sensor.m230_CosPhi' : { 'unit_of_measurement': '\u00b0', 'friendly_name': 'Average Cosφ' },
+        'sensor.m230_PhaseA_CosPhi' : { 'unit_of_measurement': '', 'friendly_name': 'Phase A Cosφ' },
+        'sensor.m230_PhaseB_CosPhi' : { 'unit_of_measurement': '', 'friendly_name': 'Phase B Cosφ' },
+        'sensor.m230_PhaseC_CosPhi' : { 'unit_of_measurement': '', 'friendly_name': 'Phase C Cosφ' },
+        'sensor.m230_CosPhi' : { 'unit_of_measurement': '', 'friendly_name': 'Average Cosφ' },
         'sensor.m230_freq' : { 'unit_of_measurement': 'Hz', 'friendly_name': 'Grid frequency' },
 }
 
@@ -131,15 +135,11 @@ class M230:
         self._tty = tty
         self.fail = True
 
-    def getData(self):
-        self.data = dict()
-        self.data['error'] = None
-
-        if self.fail:
-            self.connect()
-
+    def selfClean(self):
         self.getConnect()
 
+        self.data = dict()
+        self.data['error'] = None
         self.data['Energy'] = dict()
         self.data['PhaseA'] = dict()
         self.data['PhaseB'] = dict()
@@ -155,18 +155,26 @@ class M230:
         self.data['PhaseB']['I']  = 0
         self.data['PhaseC']['I']  = 0
 
-        if not self.fail:
-            self.openChannel()
+    def getData(self):
+        if self.connect() and self.openChannel():
             # self.getSN()
+            self.selfClean()
             self.getFreq()
             self.getEn0()
-            # self.getEn1()
-            # self.getEn2()
+            self.getEn1()
+            self.getEn2()
+            self.getEn3()
+            self.getEn4()
 
             self.getU()
             self.getI()
             self.getCosF()
             self.getP()
+            if not self.fail:
+                return True
+        else:
+            if debug: print("Bad data", json.dumps(m230.data, indent=4, sort_keys=True))
+        return False
 
     def connect(self):
         try:
@@ -207,7 +215,7 @@ class M230:
              rsp= self._ser.read(19)
 
              self.data['Energy']['Sum'] = dict()
-             x = self.data['Energy']['Sum'] 
+             x = self.data['Energy']['Sum']
              x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
              # x['Active_minus'] =  ((int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7]))^0xFFFFFFFF) / 1000.0
              x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
@@ -221,7 +229,7 @@ class M230:
              pass
          return False
 
-    ########################################################################    A+ A- R+ R- T1
+    ########################################################################    A+ A- R+ R- Sum
     def getEn1(self):
          if self.fail: return False
          try:
@@ -231,12 +239,10 @@ class M230:
              self._ser.write([ int(self._netaddr),0x05,0x00,0x01, crc16Lo(dataIn), crc16Hi(dataIn) ])
              rsp= self._ser.read(19)
 
-             self.data['Energy']['Day'] = dict()
-             x = self.data['Energy']['Day'] 
+             self.data['Energy']['Sum1'] = dict()
+             x = self.data['Energy']['Sum1']
              x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
-             x['Active_minus'] =  ((int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7]))^0xFFFFFFFF) / 1000.0
              x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
-             x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -244,7 +250,7 @@ class M230:
              pass
          return False
 
-    ########################################################################    A+ A- R+ R- T1
+    ########################################################################    A+ A- R+ R- Sum
     def getEn2(self):
          if self.fail: return False
          try:
@@ -254,12 +260,10 @@ class M230:
              self._ser.write([ int(self._netaddr),0x05,0x00,0x02, crc16Lo(dataIn), crc16Hi(dataIn) ])
              rsp= self._ser.read(19)
 
-             self.data['Energy']['Night'] = dict()
-             x = self.data['Energy']['Night'] 
+             self.data['Energy']['Sum2'] = dict()
+             x = self.data['Energy']['Sum2']
              x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
-             x['Active_minus'] =  ((int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7]))^0xFFFFFFFF) / 1000.0
              x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
-             x['Reactive_minus']  = ((int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15]))^0xFFFFFFFF) / 1000.0
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -267,7 +271,7 @@ class M230:
              pass
          return False
 
-    ########################################################################    A+ A- R+ R- T1
+    ########################################################################    A+ A- R+ R- Sum
     def getEn3(self):
          if self.fail: return False
          try:
@@ -276,16 +280,19 @@ class M230:
              dataIn = [ int(self._netaddr),0x05,0x00,0x03]
              self._ser.write([ int(self._netaddr),0x05,0x00,0x03, crc16Lo(dataIn), crc16Hi(dataIn) ])
              rsp= self._ser.read(19)
-             Aplus  = int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])
-             Aminus =  int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7])
-             Rplus  =  int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])
-             Rminus  = int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15])
+
+             self.data['Energy']['Sum3'] = dict()
+             x = self.data['Energy']['Sum3']
+             x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
+             x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
+             return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
-         return Aplus / 1000.0, (Aminus^0xFFFFFFFF) / 1000.0, Rplus / 1000.0, (Rminus^0xFFFFFFFF) / 1000.0
+             pass
+         return False
 
-    ########################################################################    A+ A- R+ R- T1
+    ########################################################################    A+ A- R+ R- Sum
     def getEn4(self):
          if self.fail: return False
          try:
@@ -294,14 +301,17 @@ class M230:
              dataIn = [ int(self._netaddr),0x05,0x00,0x04]
              self._ser.write([ int(self._netaddr),0x05,0x00,0x04, crc16Lo(dataIn), crc16Hi(dataIn) ])
              rsp= self._ser.read(19)
-             Aplus  = int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])
-             Aminus =  int(rsp[6]<<24) + int(rsp[5]<<16) + int(rsp[8]<<8) + int(rsp[7])
-             Rplus  =  int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])
-             Rminus  = int(rsp[14]<<24) + int(rsp[13]<<16) + int(rsp[16]<<8) + int(rsp[15])
+
+             self.data['Energy']['Sum4'] = dict()
+             x = self.data['Energy']['Sum4']
+             x['Active_plus']  = (int(rsp[2]<<24) + int(rsp[1]<<16) + int(rsp[4]<<8) + int(rsp[3])) / 1000.0
+             x['Reactive_plus']  = (int(rsp[10]<<24) + int(rsp[9]<<16) + int(rsp[12]<<8) + int(rsp[11])) / 1000.0
+             return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
              self.fail = True
-         return Aplus / 1000.0, (Aminus^0xFFFFFFFF) / 1000.0, Rplus / 1000.0, (Rminus^0xFFFFFFFF) / 1000.0
+             pass
+         return False
 
     #########################################################################     try to find unit
     def getConnect(self):
@@ -337,6 +347,10 @@ class M230:
              self.data['PhaseA']['U']  = (int(rsp[1]<<16) + int(rsp[3]<<8) + int(rsp[2])) / 100.0
              self.data['PhaseB']['U']  = (int(rsp[4]<<16) + int(rsp[6]<<8) + int(rsp[5])) / 100.0
              self.data['PhaseC']['U']  = (int(rsp[7]<<16) + int(rsp[9]<<8) + int(rsp[8])) / 100.0
+             if self.data['PhaseA']['U'] > 300 or self.data['PhaseB']['U'] > 300 or self.data['PhaseC']['U'] > 300:
+                 self.data['error'] = 'Overvoltage'
+                 self.fail = True
+                 return False
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -357,6 +371,10 @@ class M230:
              self.data['PhaseA']['I']  = (int(rsp[1]<<16) + int(rsp[3]<<8) + int(rsp[2])) / 1000.0
              self.data['PhaseB']['I']  = (int(rsp[4]<<16) + int(rsp[6]<<8) + int(rsp[5])) / 1000.0
              self.data['PhaseC']['I']  = (int(rsp[7]<<16) + int(rsp[9]<<8) + int(rsp[8])) / 1000.0
+             if self.data['PhaseA']['I'] > 40 or self.data['PhaseB']['I'] > 40 or self.data['PhaseC']['I'] > 40:
+                 self.data['error'] = 'Overcurrent'
+                 self.fail = True
+                 return False
              return True
          except Exception as e:
              self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -368,10 +386,15 @@ class M230:
     def getP(self):
         if self.fail: return False
         try:
-            self.data['PhaseA']['P'] = round(self.data['PhaseA']['U'] * self.data['PhaseA']['I'], 2)
-            self.data['PhaseB']['P'] = round(self.data['PhaseB']['U'] * self.data['PhaseB']['I'], 2)
-            self.data['PhaseC']['P'] = round(self.data['PhaseC']['U'] * self.data['PhaseC']['I'], 2)
+            self.data['PhaseA']['P'] = round(self.data['PhaseA']['U'] * self.data['PhaseA']['I'] * self.data['PhaseA']['CosPhi'], 2)
+            self.data['PhaseB']['P'] = round(self.data['PhaseB']['U'] * self.data['PhaseB']['I'] * self.data['PhaseB']['CosPhi'], 2)
+            self.data['PhaseC']['P'] = round(self.data['PhaseC']['U'] * self.data['PhaseC']['I'] * self.data['PhaseC']['CosPhi'], 2)
             self.data['Power_Total'] = round(self.data['PhaseA']['P'] + self.data['PhaseB']['P'] + self.data['PhaseC']['P'], 2)
+
+            self.data['PhaseA']['S'] = round(self.data['PhaseA']['U'] * self.data['PhaseA']['I'] - self.data['PhaseA']['P'], 2)
+            self.data['PhaseB']['S'] = round(self.data['PhaseB']['U'] * self.data['PhaseB']['I'] - self.data['PhaseB']['P'], 2)
+            self.data['PhaseC']['S'] = round(self.data['PhaseC']['U'] * self.data['PhaseC']['I'] - self.data['PhaseC']['P'], 2)
+            self.data['Reactive_Total'] = round(self.data['PhaseA']['S'] + self.data['PhaseB']['S'] + self.data['PhaseC']['S'], 2)
             return True
         except Exception as e:
             self.data['error'] = '{} : {}'.format(inspect.currentframe().f_code.co_name, e)
@@ -495,10 +518,10 @@ class M230:
              if( bt10[1] == '1'): P3 = P3        #   0x40
              if( bt10[0] == '1'): P3 = P3 * -1   #   0x80
 
-             self.data['PhaseA']['CosPhi'] = P1 / 10.0
-             self.data['PhaseB']['CosPhi'] = P2 / 10.0
-             self.data['PhaseC']['CosPhi'] = P3 / 10.0
-             self.data['CosPhi'] = P / 10.0
+             self.data['PhaseA']['CosPhi'] = P1 / 1000.0
+             self.data['PhaseB']['CosPhi'] = P2 / 1000.0
+             self.data['PhaseC']['CosPhi'] = P3 / 1000.0
+             self.data['CosPhi'] = P / 1000.0
              return True
 
          except Exception as e:
@@ -579,16 +602,21 @@ class M230:
 if __name__ == '__main__':
     m230 = M230('/dev/moxa', 0)
     while True:
-        m230.getData()
+        print('Go')
+        if not m230.getData():
+            continue
+
         mydict = dict()
         if debug: print(json.dumps(m230.data, indent=4, sort_keys=True))
         mkflatdict(m230.data, 'sensor.m230')
         for k,v in mydict.items():
             sensor['entity_id'] = k
+            if v is None:
+                v = 'None'
             sensor['state'] = v
             sensor['attributes'] = sens2attr.get(k, '')
-            # print(sensor)
+            # if debug: print("Going to post", url_tmpl + k)
             rc = post(url_tmpl + k, headers=headers, json = sensor).json()
-            if debug: print(rc)
+            # if debug: print("Result", rc)
 
-        time.sleep(30)
+        time.sleep(10)
