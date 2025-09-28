@@ -1,0 +1,11 @@
+[Unit]
+Description=Boiler control service for Newbie
+Requires=qemu-kvm.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/cycler.sh new_boiler_control.py 60
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
