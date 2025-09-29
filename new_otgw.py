@@ -18,7 +18,7 @@ debug = True
 url_setpoint = new_host + "api/states/input_number.heatant_setpoint"
 url_heatant_temp = new_host + "api/states/input_number.heatant_temp"
 url_boiler_power = new_host + "api/states/input_number.boiler_power"
-url_boiler_fault = new_host + "api/states/input_text.boiler_fault"
+url_boiler_fault = new_host + "api/states/input_boolean.boiler_fault"
 url_boiler_flame = new_host + "api/states/input_boolean.boiler_flame"
 
 headers = {
@@ -135,7 +135,8 @@ if 'Modulation' in boiler_data:
     if debug: print(json.dumps(boiler_power))
 
 if 'Fault' in boiler_data:
-    boiler_fault['state'] = boiler_data['Fault']
+    boiler_fault['state'] = "off"
+    if boiler_data['Fault'] == True: boiler_fault['state'] = "on"
     response = post(url_boiler_fault, headers = headers, json = boiler_fault)
     if debug: print(json.dumps(boiler_fault))
 
