@@ -49,6 +49,7 @@ def getMap(ser, cmd):
 	command.append(0x0d)
 	command.append(0x0a)
 	ser.write(command)
+	if debug: print('DEBUG', '>>>>', command)
 	rc = bytearray()
 	echo = False
 	while(True):
@@ -64,6 +65,7 @@ def getMap(ser, cmd):
 			if tmp != b'\r' and tmp != b'\n':
 				rc.append(tmp[0])
 			if tmp == b'\n':
+				if debug: print('DEBUG', '<<<<', rc.decode('ascii'))
 				if rc.decode('ascii').find('MOk') == 0:
 					answer = bytearray()
 					answer.append(rc[3])
@@ -84,10 +86,18 @@ commands = [
 			'Вкл, насквозь'
 		], 'url': 'input_text.sostoianie' },
 	{'addr': 'PCRD40765', 'name': 'Vacc',  'unit': 'V',  'times': 0.1, 'add': 0,   'url': 'input_number.napriazhenie_batarei'},
+	{'addr': 'PCRD40963', 'name': 'Pacc',  'unit': 'A',  'times': 1,   'add': 0,   'url': 'input_number.battery_power'},
 	{'addr': 'PCRD42268', 'name': 'Vgrid', 'unit': 'V',  'times': 1,   'add': 100, 'url': 'input_number.napriazhenie_seti'},
 	{'addr': 'PCRD42367', 'name': 'Igrid', 'unit': 'A',  'times': 1,   'add': 0,   'url': 'input_number.tok_iz_seti'},
 	{'addr': 'PCRD42565', 'name': 'Fgrid', 'unit': 'Hz', 'times': 1,   'add': 0,   'url': 'input_number.chastota'},
+	{'addr': 'PCRD42466', 'name': 'Pgrid', 'unit': 'W',  'times': 100, 'add': 0,   'url': 'input_number.grid_power'},
 ]
+
+#commands = [
+#	{'addr': 'PCRD40864', 'name': 'Iacc',  'unit': 'A',  'times': 1,   'add': 0,   'url': 'input_number.battery_power'},
+#	{'addr': 'PCRD40963', 'name': 'Pacc',  'unit': 'A',  'times': 1,   'add': 0,   'url': 'input_number.battery_power'},
+#
+#]
 
 state = ''
 for cmd in commands:
