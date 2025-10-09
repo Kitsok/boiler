@@ -20,6 +20,7 @@ url_heatant_temp = new_host + "api/states/input_number.heatant_temp"
 url_boiler_power = new_host + "api/states/input_number.boiler_power"
 url_boiler_fault = new_host + "api/states/input_boolean.boiler_fault"
 url_boiler_flame = new_host + "api/states/input_boolean.boiler_flame"
+url_vt_state = new_host + "api/states/iclimate.main_climate"
 
 headers = {
     "Authorization": new_token,
@@ -59,6 +60,11 @@ boiler_flame = {
     },
     "entity_id": "input_boolean.boiler_flame",
     "state": False
+}
+
+vt_state = {
+    "entity_id": "climate.main_climate",
+    "state": "off"
 }
 
 # Fetch setpoint from HA
@@ -142,7 +148,11 @@ if 'Fault' in boiler_data:
 
 if 'Flame' in boiler_data:
     boiler_flame['state'] = "off"
+    vt_state['state'] = "off"
     if boiler_data['Flame'] == True: boiler_flame['state'] = "on"
+    if boiler_data['Flame'] == True: vt_state['state'] = "heat"
     response = post(url_boiler_flame, headers = headers, json = boiler_flame)
     if debug: print(json.dumps(boiler_flame))
+    response = post(url_vt_state, headers = headers, json = vt_state)
+    if debug: print(json.dumps(vt_state))
 
