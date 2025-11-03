@@ -153,6 +153,6 @@ if 'Flame' in boiler_data:
     if boiler_data['Flame'] == True: vt_state['state'] = "heat"
     response = post(url_boiler_flame, headers = headers, json = boiler_flame)
     if debug: print(json.dumps(boiler_flame))
-    response = post(url_vt_state, headers = headers, json = vt_state)
-    if debug: print(json.dumps(vt_state))
+    # response = post(url_vt_state, headers = headers, json = vt_state)
+    # if debug: print(json.dumps(vt_state))
 
