@@ -1,0 +1,11 @@
+[Unit]
+Description=OpenTherm gateway checker
+Requires=qemu-kvm.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/cycler.sh otgw_checker.sh 60
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
